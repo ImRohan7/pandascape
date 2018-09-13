@@ -1,0 +1,252 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Making your first Phaser 3 Game - Part 1</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+    var config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        physics: {
+            default: 'arcade',
+            arcade: {         
+            debug: false
+        }
+    },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    var game = new Phaser.Game(config);
+    var Panda;
+    var CopCar;
+    var ZooKeeper;
+    var cursors;
+    var bg;
+    var spikes;
+    var health = 100;
+    var healthText;
+    var fruit;
+    var Bullet;
+    function preload ()
+    {
+         this.load.image('bg','Env/Back.png');
+         this.load.image('spike','Env/Obstacles/spike.png');
+         this.load.image('fruit','Env/Obstacles/fruit.png');
+         this.load.image('bullet','Env/Obstacles/Injection.png');
+         this.load.spritesheet('panda','Env/Sprites/Panda.png', { frameWidth: 32, frameHeight: 32 } );
+         this.load.spritesheet('CopCar','Env/Sprites/CopCar.png', { frameWidth: 32, frameHeight: 32 } );
+         this.load.spritesheet('ZooKeeper','Env/Sprites/ZooKeeper.png', { frameWidth: 32, frameHeight: 32 } );    
+         this.load.image('wall','Env/Obstacles/wall.png');
+        
+    }
+    
+    //var bullets;
+
+    function create ()
+    {
+        var bg =  this.add.sprite(0, -1000, 'bg').setOrigin(0,0);
+        var bg1 = this.add.sprite(0, -2800,'bg').setOrigin(0,0);
+
+        Bullet = this.physics.add.sprite(400,750, 'bullet');
+        Bullet.scaleX = 0.7;
+        Bullet.scaleY = 0.7;
+        Panda = this.physics.add.sprite(400,500, 'panda');
+        Panda.scaleX = 2;
+        Panda.scaleY = 2;
+        
+        CopCar = this.physics.add.sprite(200,600,'CopCar');
+        CopCar.scaleX = 2;
+        CopCar.scaleY = 2;
+       // Panda.setCollideWorldBounds(true);
+
+        this.cameras.main.startFollow(Panda, true);
+        this.cameras.main.setDeadzone(1000,0);
+
+        ZooKeeper = this.physics.add.sprite(400, 750, 'ZooKeeper');
+        ZooKeeper.scaleX = 2;
+        ZooKeeper.scaleY = 2;
+
+        healthText = this.add.text(16, 30, 'Health: 100', { fontSize: '32px' ,color: '#9E0A0A',  backgroundColor : '#A2A5D9' ,fontStyle:'bold'});
+
+        
+//Spikes
+        spikes = this.physics.add.group({
+        key: 'spike',
+        repeat: 4,
+        setXY: { x: 250, y: 10, stepX: 80, stepY: 100 }
+         });
+         
+        fruits = this.physics.add.group({
+        key: 'fruit',
+        repeat: 5,
+        setXY: { x: 250, y: -800, stepX: 30, stepY: 300 }
+         });
+
+ this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('panda', { start: 0, end: 3 } ),
+            frameRate: 10,
+            repeat: -1
+        }); 
+
+this.anims.create({
+            key: 'zoo',
+            frames: this.anims.generateFrameNumbers('ZooKeeper', { start: 0, end: 8 } ),
+            frameRate: 10,
+            repeat: -1
+        }); 
+
+
+this.anims.create({
+            key: 'CopCar',
+            frames: this.anims.generateFrameNumbers('CopCar', { start: 0, end: 5 } ),
+            frameRate: 10,
+            repeat: -1
+        }); 
+         cursors = this.input.keyboard.createCursorKeys();
+         
+       
+         this.physics.add.overlap(Panda, spikes, collectStar, null, this);
+         this.physics.add.overlap(Panda, fruits, collectFruit, null, this);
+         this.physics.add.overlap(Panda, Bullet, bulletHit, null, this);
+    }
+
+    function update ()
+    {
+        
+        var cam = this.cameras.main;//add
+        Panda.anims.play('left', true);
+        CopCar.anims.play('CopCar', true);
+
+        CopCar.setVelocityY(-100);
+
+        if(Panda.y<-2400)
+        {
+            Panda.setVelocityY(0); 
+            ZooKeeper.setVelocityX(0);
+            healthText.y = Panda.y - 270;
+            ZooKeeper.y = Panda.y + 250;
+            
+        //cam.scrollY -= 4;
+        }
+        else
+        {
+            Panda.setVelocityY(-100);
+            healthText.y = Panda.y - 270;
+            ZooKeeper.y = Panda.y + 250;
+
+            if(Panda.x < ZooKeeper.x)
+            {
+                //sleep(100);
+
+                ZooKeeper.setVelocityX(-100);
+            }
+
+            else if(Panda.x > ZooKeeper.x)
+            {
+                //sleep(100);
+
+                ZooKeeper.setVelocityX(100);
+                    
+            }
+        
+        }
+        
+        Bullet.setVelocityY(-200);
+        if(ZooKeeper.x >= 600){
+            ZooKeeper.x = 600;
+             }
+             if(ZooKeeper.x <= 230){
+                ZooKeeper.x = 230;
+             }
+        
+           if(Panda.x >= 600){
+               Panda.x = 600;
+             }
+             if(Panda.x <= 230){
+               Panda.x = 230;
+             }
+
+        ZooKeeper.anims.play('zoo', true);
+        ZooKeeper.setVelocityY(-100);
+     if (cursors.left.isDown)
+          {
+            Panda.setVelocityX(-160);
+          }
+     else if (cursors.right.isDown)
+         {
+            Panda.setVelocityX(160);  
+         }
+     else
+        {
+            Panda.setVelocityX(0);         
+        }    
+            if((ZooKeeper.y - Bullet.y) >= 550)
+            {
+                Bullet.x = ZooKeeper.x;
+                 Bullet.y = ZooKeeper.y;
+            }
+        //Health 
+           if(health<=0){
+               Panda.setTint(0xff0000);
+               Panda.setVelocityX(0);
+               Panda.setVelocityY(0);
+               Panda.anims.play('left', false);
+               healthText.setText('I m Dead :( ' );
+           }
+    }
+
+function collectStar (Panda, spike)
+{
+    health -=20;
+    healthText.setText('Health: ' + health);
+    spike.disableBody(true, true);
+}
+
+
+function collectFruit (Panda, fruit)
+{
+    health +=10;
+    healthText.setText('Health: ' + health);
+    fruit.disableBody(true, true);
+
+}
+
+function bulletHit (Panda, Bullet)
+{
+    health -=20;
+    healthText.setText('Health: ' + health);
+    //Bullet.disableBody(true, true);
+    Bullet.x = ZooKeeper.x;
+    Bullet.y = ZooKeeper.y;
+    InitBullet();
+}
+
+function InitBullet(){
+    
+}
+
+function render() {
+
+game.debug.cameraInfo(game.camera, 32, 32);
+
+}
+</script>
+
+</body>
+</html>
