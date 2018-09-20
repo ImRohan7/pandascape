@@ -28,76 +28,206 @@
             preload: preload,
             create: create,
             update: update
-        }
+        },
+        audio: {
+        disableWebAudio: true
+    }
     };
+
+    var isDown=false;
+    var isUp=false;
 
     var game = new Phaser.Game(config);
     var Panda;
-    var x;
-    var CopCar;
-    var ZooKeeper;
+    var CopCar,CopCar2;
+    var ZooKeeper,ZooKeeper2,ZooKeeper3;
     var cursors;
-    var bg;
+    var bg,bg1,snowBg,greenToSnow,snowToGreen;
+    var timedEvent;
     var spikes;
-    var health = 100;
-    var healthText;
+    var norSpeed= -160;
+    var PandaSpeed = -160;
+    var ZookeeperSpeed = -160;
+    var ZookeeperSpeed02 = -160;
+    var ZookeeperSpeed03 = -160;
+    var scoreText;
     var fruit;
-    var Bullet;
+    var Bullet,Bullet2,Bullet3;
+    var Bamboo;//add
+    var Bambooitem;//add
+    var Score = 0;
+    var count = 0;  //add3
+    var collectitem = 0;
+    var cam;
+    var distance = -250;
+    var music;
+    var effectmusic;
+    var effectmusic2;
+    var effectmusic3;
+    var speedAnim; //++
+
     function preload ()
     {
          this.load.image('bg','Env/Back.png');
+         this.load.image('snowbg','Env/snow.png');
+         this.load.image('greenToSnowbg','Env/transition.png'); //g2s
+         this.load.image('snowToGreenbg','Env/transition2.png'); //s2g
+
          this.load.image('spike','Env/Obstacles/spike.png');
          this.load.image('fruit','Env/Obstacles/fruit.png');
+         this.load.image('bamboo','Env/Obstacles/Bamboo.png');//add
+         this.load.image('bambooIcon','Env/BambooIcon.png');
          this.load.image('bullet','Env/Obstacles/Injection.png');
          this.load.spritesheet('panda','Env/Sprites/Panda.png', { frameWidth: 32, frameHeight: 32 } );
+         this.load.spritesheet('fart','Env/Sprites/fart.png', { frameWidth: 100, frameHeight: 100 } );
+         this.load.spritesheet('sleep','Env/Sprites/PandaSleeping.png', {frameWidth: 32, frameHeight: 32});
          this.load.spritesheet('CopCar','Env/Sprites/CopCar.png', { frameWidth: 32, frameHeight: 32 } );
-         this.load.spritesheet('ZooKeeper','Env/Sprites/ZooKeeper.png', { frameWidth: 32, frameHeight: 32 } );    
-         this.load.image('wall','Env/Obstacles/wall.png');
-        
+         this.load.spritesheet('ZooKeeper','Env/Sprites/ZooKeeper1.png', { frameWidth: 32, frameHeight: 32 } );    
+         this.load.image('wall','Env/Obstacles/wall.png');    
+         this.load.spritesheet('speedUP','Env/Sprites/speedUP.png',{frameWidth: 32, frameHeight:32}); //++
+
+         this.load.audio('PandaMusic', [
+         'Env/PandaMusic.ogg',
+        'Env/PandaMusic.mp3'
+         ]);
+           
+         this.load.audio('PandaEat', [
+         'Env/eat.ogg',
+        'Env/eat.mp3'
+         ]);  
+         this.load.audio('ouch', [
+         'Env/Ouch.ogg',
+        'Env/Ouch.mp3'
+         ]); 
+         this.load.audio('fartsound', [
+         'Env/fart.ogg',
+        'Env/fart.mp3'
+         ]); 
     }
     
     //var bullets;
 
     function create ()
     {
-        var bg =  this.add.sprite(0, -1000, 'bg').setOrigin(0,0);
-        var bg1 = this.add.sprite(0, -2800,'bg').setOrigin(0,0);
+        music = this.sound.add('PandaMusic');
+        effectmusic = this.sound.add('PandaEat');
+        effectmusic2 = this.sound.add("ouch");
+        effectmusic3 = this.sound.add("fartsound");
+
+        music.play();
+
+        // Initializing everything
+        bg =  this.add.sprite(0, -1000, 'bg').setOrigin(0,0);
+        bg1 = this.add.sprite(0, -1000,'bg').setOrigin(0,0);
+        snowBg = this.add.sprite(0, 8000,'snowbg').setOrigin(0,0);
+
+        greenToSnow = this.add.sprite(0, 5000,'greenToSnowbg').setOrigin(0,0);
+        snowToGreen = this.add.sprite(0, 10000,'snowToGreenbg').setOrigin(0,0);
+
+        speedAnim = this.physics.add.sprite(0,0,'speedUP');
+        speedAnim.scaleX = 2;
+        speedAnim.scaleY = 2;
 
         Bullet = this.physics.add.sprite(400,750, 'bullet');
         Bullet.scaleX = 0.7;
-        Bullet.scaleY = 0.7;
+        Bullet.scaleY = 0.5;
+      
+        Bullet2 = this.physics.add.sprite(300,750, 'bullet');
+        Bullet2.scaleX = 0.7;
+        Bullet2.scaleY = 0.5;
+      
+        Bullet3 = this.physics.add.sprite(500,750, 'bullet');
+        Bullet3.scaleX = 0.7;
+        Bullet3.scaleY = 0.5;
+
+        Bamboo = this.physics.add.sprite(160,250, 'bambooIcon');//add
+        Bamboo.scaleX = 0.2;//add
+        Bamboo.scaleY = 0.2;//add
+        //Bamboo.setTint(0x000000);//add
+
+        Bamboo2 = this.physics.add.sprite(280,250, 'bambooIcon');//add
+        Bamboo2.scaleX = 0.2;//add
+        Bamboo2.scaleY = 0.2;//add
+        //Bamboo2.setTint(0x000000);//add
+
+        Bamboo3 = this.physics.add.sprite(400,250, 'bambooIcon');//add
+        Bamboo3.scaleX = 0.2;//add
+        Bamboo3.scaleY = 0.2;//add
+        //Bamboo3.setTint(0x000000);//add
+
         Panda = this.physics.add.sprite(400,500, 'panda');
         Panda.scaleX = 2;
         Panda.scaleY = 2;
         
+        SleepingPanda = this.physics.add.sprite(-500,0,'sleep');
+        SleepingPanda.scaleX = 2;
+        SleepingPanda.scaleY = 2;
+
         CopCar = this.physics.add.sprite(200,600,'CopCar');
         CopCar.scaleX = 2;
         CopCar.scaleY = 2;
-       // Panda.setCollideWorldBounds(true);
-
-        this.cameras.main.startFollow(Panda, true);
-        this.cameras.main.setDeadzone(1000,0);
+       
+        CopCar2 = this.physics.add.sprite(-5000,500,'CopCar');
+        CopCar2.scaleX = 2;
+        CopCar2.scaleY = 2;
 
         ZooKeeper = this.physics.add.sprite(400, 750, 'ZooKeeper');
         ZooKeeper.scaleX = 2;
         ZooKeeper.scaleY = 2;
 
-        healthText = this.add.text(16, 30, 'Health: 100', { fontSize: '32px' ,color: '#9E0A0A',  backgroundColor : '#A2A5D9' ,fontStyle:'bold'});
+        ZooKeeper2 = this.physics.add.sprite(300, 750, 'ZooKeeper');
+        ZooKeeper2.scaleX = 2;
+        ZooKeeper2.scaleY = 2;
+       
+        ZooKeeper3 = this.physics.add.sprite(500, 750, 'ZooKeeper');
+        ZooKeeper3.scaleX = 2;
+        ZooKeeper3.scaleY = 2;
 
+        this.cameras.main.startFollow(Panda, true);
+        this.cameras.main.setDeadzone(1000,0);
+
+
+        cursors = this.input.keyboard.createCursorKeys();
+
+        Fart = this.physics.add.sprite(1000, 1000, 'fart');
+        scoreText = this.add.text(16, 30, 'Health: 100', { fontSize: '32px' ,color: '#000000',  backgroundColor : '#FFFFFF' ,fontStyle:'bold'});
         
 //Spikes
         spikes = this.physics.add.group({
         key: 'spike',
-        repeat: 4,
-        setXY: { x: 250, y: 10, stepX: 80, stepY: 100 }
-         });
-         
+        repeat: 100,
+        setXY: { x: 300, y: 100, stepX: Math.random()*600+50, stepY: distance }
+        });
+
+        for(var i =0; i< spikes.children.entries.length;i++){
+            console.log(spikes.children.entries[i].x = Math.random()*300+250);
+        }
+
+//Fruits
         fruits = this.physics.add.group({
         key: 'fruit',
-        repeat: 5,
-        setXY: { x: 250, y: -800, stepX: 30, stepY: 300 }
-         });
+        repeat: 100,
+        setXY: { x: 300, y: 30, stepX: Math.random()*1200, stepY: -300 }
+        });
 
+        for(var i =0; i< fruits.children.entries.length;i++){
+           console.log(fruits.children.entries[i].x = Math.random()*300+250);
+           //console.log(spikes.children.entries[i].y = Math.random()*1000+250);
+       }
+
+//Bamboos
+        Bambooitem = this.physics.add.group({
+        key: 'bamboo',
+        repeat: 100,
+        setXY: { x: 300, y: 30, stepX: Math.random()*1200, stepY: -850 }
+        });
+
+        for(var i =0; i< Bambooitem.children.entries.length;i++){
+           console.log(Bambooitem.children.entries[i].x = Math.random()*300+250);
+           //console.log(spikes.children.entries[i].y = Math.random()*1000+250);
+       }
+
+//Animations
  this.anims.create({
             key: 'left',
             frames: this.anims.generateFrameNumbers('panda', { start: 0, end: 3 } ),
@@ -105,13 +235,30 @@
             repeat: -1
         }); 
 
+this.anims.create({ //add2
+            key: 'fart',
+            frames: this.anims.generateFrameNumbers('fart', { start: 0, end: 6 } ),
+            frameRate: 10,
+            repeat: -1
+        }); 
+ this.anims.create({
+            key: 'speed',
+            frames: this.anims.generateFrameNumbers('speedUP', { start: 0, end: 2 } ),
+            frameRate: 10,
+            repeat: -1
+        }); 
 this.anims.create({
             key: 'zoo',
             frames: this.anims.generateFrameNumbers('ZooKeeper', { start: 0, end: 8 } ),
             frameRate: 10,
             repeat: -1
         }); 
-
+this.anims.create({
+            key: 'sleep',
+            frames: this.anims.generateFrameNumbers('sleep', { start: 0, end: 3 } ),
+            frameRate: 10,
+            repeat: -1
+        }); 
 
 this.anims.create({
             key: 'CopCar',
@@ -119,63 +266,97 @@ this.anims.create({
             frameRate: 10,
             repeat: -1
         }); 
-         cursors = this.input.keyboard.createCursorKeys();
+      
          
-       
+    //Colliders   
          this.physics.add.overlap(Panda, spikes, collectStar, null, this);
          this.physics.add.overlap(Panda, fruits, collectFruit, null, this);
          this.physics.add.overlap(Panda, Bullet, bulletHit, null, this);
+         this.physics.add.overlap(Panda, Bullet2, bulletHit2, null, this);
+         this.physics.add.overlap(Panda, Bullet3, bulletHit3, null, this);
+         this.physics.add.overlap(Panda, Bambooitem, collectBamboo, null, this);
+         this.physics.add.overlap(ZooKeeper, Fart, ZooKeeperSlow, null, this);//add2
+         this.physics.add.overlap(ZooKeeper2, Fart, ZooKeeperSlow02, null, this);//add2
+         this.physics.add.overlap(ZooKeeper3, Fart, ZooKeeperSlow03, null, this);//add2
+ 
     }
 
+
+/////////////////////////////////////////////////////////////
     function update ()
     {
-        
-        var cam = this.cameras.main;//add
+        ShowBambooIcon();
+
+//Updating score
+        timedEvent = this.time.delayedCall(1000, Scorerecord, [], this);//add2
+
+//ScoreText
+    scoreText.setText('Score: ' + Score);//add2
+    scoreText.y = Panda.y - 270;
+
+//Camera
+        cam = this.cameras.main;//add
+
+//turning on Animations       
         Panda.anims.play('left', true);
         CopCar.anims.play('CopCar', true);
 
-        CopCar.setVelocityY(-100);
+     CopCar2.anims.play('CopCar', true);
+        ZooKeeper.anims.play('zoo', true);
+        ZooKeeper2.anims.play('zoo', true);
+        ZooKeeper3.anims.play('zoo', true);
 
-        if(Panda.y<-2400)
+//Bamboo icon on TOP
+        Bamboo.y = Panda.y - 230;
+        Bamboo.x = 670;   
+
+        Bamboo2.y = Panda.y - 230;
+        Bamboo2.x = 720;  
+
+        Bamboo3.y = Panda.y - 230;
+        Bamboo3.x = 770;      
+
+//Handling Background Infinite movement
+     
+        if(Panda.y <=bg.y+300)
         {
-            Panda.setVelocityY(0); 
-            ZooKeeper.setVelocityX(0);
-            healthText.y = Panda.y - 270;
-            ZooKeeper.y = Panda.y + 250;
-            
-        //cam.scrollY -= 4;
+            greenToSnow.y = bg.y-1800;
+            snowBg.y = greenToSnow.y-1800;
+           // bg1.y=bg.y-1800;
         }
-        else
-        {
-            Panda.setVelocityY(-100);
-            healthText.y = Panda.y - 270;
-            ZooKeeper.y = Panda.y + 250;
+     
+     if(Panda.y <= snowBg.y +300)
+     {
+         snowToGreen.y = snowBg.y-1800;
+         bg.y = snowToGreen.y-1800;
+     }
 
-            if(Panda.x < ZooKeeper.x)
-            {
-                //sleep(100);
+        //  if(Panda.y <= bg1.y+300)
+        // {
+        //     bg.y = bg1.y - 1800;
+        // }
 
-                ZooKeeper.setVelocityX(-100);
-            }
+//Adding velocity
+        CopCar.setVelocityY(PandaSpeed);
+        CopCar2.setVelocityY(PandaSpeed);
+        Panda.setVelocityY(PandaSpeed);
 
-            else if(Panda.x > ZooKeeper.x)
-            {
-                //sleep(100);
+        // if(CopCar.y <= Panda.y -300)
+        // {
+        //     CopCar.y = Panda.y +300;
+        // }
 
-                ZooKeeper.setVelocityX(100);
-                    
-            }
-        
-        }
-        
-        Bullet.setVelocityY(-200);
-        if(ZooKeeper.x >= 600){
-            ZooKeeper.x = 600;
-             }
-             if(ZooKeeper.x <= 230){
-                ZooKeeper.x = 230;
-             }
-        
+//Zookeers           
+        ZooKeeper.setVelocityY(ZookeeperSpeed);
+        ZooKeeper2.setVelocityY(ZookeeperSpeed02);
+        ZooKeeper3.setVelocityY(ZookeeperSpeed03);
+    
+//Injections        
+        Bullet.setVelocityY(norSpeed-100);
+        Bullet2.setVelocityY(norSpeed-140);
+        Bullet3.setVelocityY(norSpeed-120);
+
+//Setting Boundries for Panda
            if(Panda.x >= 600){
                Panda.x = 600;
              }
@@ -183,71 +364,346 @@ this.anims.create({
                Panda.x = 230;
              }
 
-        ZooKeeper.anims.play('zoo', true);
-        ZooKeeper.setVelocityY(-100);
-     if (cursors.left.isDown)
-          {
-            Panda.setVelocityX(-160);
-          }
-     else if (cursors.right.isDown)
-         {
-            Panda.setVelocityX(160);  
-         }
-     else
+//Keeping Zookepers in the screen
+        if(ZooKeeper.y>=Panda.y+280)
         {
-            Panda.setVelocityX(0);         
-        }    
-            if((ZooKeeper.y - Bullet.y) >= 550)
+            ZooKeeper.y = Panda.y + 278;
+        }
+        if(ZooKeeper2.y>=Panda.y+280)
+        {
+            ZooKeeper2.y = Panda.y + 278;
+        }
+        if(ZooKeeper3.y>=Panda.y+280)
+        {
+            ZooKeeper3.y = Panda.y + 278;
+        }
+      
+//Keyboard Controlls
+     if (cursors.left.isDown)
+        {
+            Panda.setVelocityX(-160);
+            ZooKeeper.setVelocityX(-120);
+            ZooKeeper2.x = ZooKeeper.x - 100;
+            ZooKeeper3.x = ZooKeeper.x + 100;
+        }
+     else if (cursors.right.isDown)
+        {
+            Panda.setVelocityX(160); 
+            ZooKeeper.setVelocityX(120);
+            ZooKeeper2.x = ZooKeeper.x - 100;
+            ZooKeeper3.x = ZooKeeper.x + 100;
+        }
+    //  else if(cursors.space.isDown)//add2
+    //     {
+            
+    //         {//console.log("test");
+    //          if(collectitem > 0)//add2
+    //         {
+    //             fartfunction();
+                
+    //         }
+    //         }
+    //     }
+         else
+        {
+             Panda.setVelocityX(0);
+             //if(ZooKeeper2.x == 230 || ZooKeeper3.x == 600)
+             {
+                ZooKeeper2.setVelocityX(0);
+                ZooKeeper3.setVelocityX(0);
+                ZooKeeper.x = ZooKeeper2.x + 100;
+             }
+             
+        }
+    if(cursors.space.isDown){ isDown=true; }
+
+    if(isDown)
+    {
+        if(cursors.space.isUp) { isUp=true; }
+    }
+    if(isDown)
+    {
+        if(isUp)
+        {
+            if(collectitem>0)
+            {
+                fartfunction();
+            }
+            isDown=false;
+            isUp=false;
+        }
+    }
+
+   //Spoawning bullet continuously from zookeper
+
+            if((ZooKeeper.y - Bullet.y) >= 650)
             {
                 Bullet.x = ZooKeeper.x;
-                 Bullet.y = ZooKeeper.y;
+                Bullet.y = ZooKeeper.y;
             }
-        //Health 
-           if(health<=0){
+
+            if((ZooKeeper2.y - Bullet2.y) >= 800)
+            {
+                Bullet2.x = ZooKeeper2.x;
+                Bullet2.y = ZooKeeper2.y;
+            }
+
+            if((ZooKeeper3.y - Bullet3.y) >= 750)
+            {
+                Bullet3.x = ZooKeeper3.x;
+                Bullet3.y = ZooKeeper3.y;
+            }
+
+
+    //Panda sleeps when zookeepers catch him
+           if(ZooKeeper.y<=Panda.y+60 || ZooKeeper2.y<=Panda.y+60 || ZooKeeper3.y<=Panda.y+60){
+
                Panda.setTint(0xff0000);
                Panda.setVelocityX(0);
                Panda.setVelocityY(0);
                Panda.anims.play('left', false);
-               healthText.setText('I m Dead :( ' );
+               SleepingPanda.x = Panda.x;
+               SleepingPanda.y = Panda.y;
+               ZookeeperSpeed=0;
+               ZookeeperSpeed02=0;
+               ZookeeperSpeed03=0;
+               
+               Bullet.disableBody(true, true);
+               Bullet2.disableBody(true, true);
+               Bullet3.disableBody(true, true);
+
+               SleepingPanda.anims.play('sleep',true);
+               Panda.disableBody(true,true);
+               scoreText.setText('I m sleeping ' );
+
            }
     }
 
+//Functions
+
+//For spike collisions
 function collectStar (Panda, spike)
 {
-    health -=20;
-    healthText.setText('Health: ' + health);
+    effectmusic2.play();
     spike.disableBody(true, true);
+    PandaSpeed = -20;
+    Panda.setTint(0xff0000);
+    timedEvent = this.time.delayedCall(250, NormalSpeed, [], this);
 }
 
-
+//Collecting fruit
 function collectFruit (Panda, fruit)
 {
-    health +=10;
-    healthText.setText('Health: ' + health);
+    
+    effectmusic.play();
     fruit.disableBody(true, true);
+    PandaSpeed = -250;
+    Score += 20;
+
+     speedAnim.anims.play('speed',true);  
+     speedAnim.x = Panda.x;
+     speedAnim.y = Panda.y;
+
+    timedEvent = this.time.delayedCall(500, NormalSpeed, [], this);
 
 }
 
+//Hitting by a Bullets
 function bulletHit (Panda, Bullet)
 {
-    health -=20;
-    healthText.setText('Health: ' + health);
-    //Bullet.disableBody(true, true);
+
     Bullet.x = ZooKeeper.x;
     Bullet.y = ZooKeeper.y;
-    InitBullet();
+    Panda.setTint(0xff0000);
+    PandaSpeed = -20;
+    timedEvent = this.time.delayedCall(250, NormalSpeed, [], this);
 }
 
-function InitBullet(){
+function bulletHit2 (Panda, Bullet)
+{
+
+    Bullet2.x = ZooKeeper2.x;
+    Bullet2.y = ZooKeeper2.y;
+    Panda.setTint(0xff0000);
+    PandaSpeed = -20;
+    timedEvent = this.time.delayedCall(250, NormalSpeed, [], this);
+}
+
+function bulletHit3 (Panda, Bullet)
+{
+    Bullet3.x = ZooKeeper3.x;
+    Bullet3.y = ZooKeeper3.y;
+    Panda.setTint(0xff0000);
+    PandaSpeed = -20;
+    timedEvent = this.time.delayedCall(250, NormalSpeed, [], this);
+}
+
+function ShowBambooIcon()
+{ 
+    if(collectitem == 0)
+    {   
+        Bamboo.setTint(0x708090);
+        Bamboo2.setTint(0x708090);
+        Bamboo3.setTint(0x708090);
+    }
+    else if(collectitem == 1)
+    {   
+        Bamboo.setTint(0xffffff);
+        Bamboo2.setTint(0x708090);
+        Bamboo3.setTint(0x708090); 
+    }
+    else if(collectitem == 2)
+    {   
+        Bamboo.setTint(0xffffff);
+        Bamboo2.setTint(0xffffff);
+        Bamboo3.setTint(0x708090);
+    }
+    else if(collectitem == 3)
+    {   
+        Bamboo.setTint(0xffffff);
+        Bamboo2.setTint(0xffffff);
+        Bamboo3.setTint(0xffffff);
+    }
+}
+
+
+//Collecting Bamboo
+function collectBamboo (Panda, Bambooitem)//add
+{
+    effectmusic.play();
+    Bambooitem.disableBody(true, true);
+
+    Panda.scaleX = 2.5;
+    Panda.scaleY = 2.5;
+
+    if(collectitem < 3)
+    {
+        collectitem ++;
+    }
+
+    //ShowBambooIcon();
+}
+
+//Fart effecting zookeeper
+function ZooKeeperSlow(ZooKeeper, Fart)//add2
+{
+    ZookeeperSpeed = -10;
+    ZooKeeper.setTint(0xff0000);
+    
+    timedEvent = this.time.delayedCall(2500, ZooKeeperSpeedup, [], this);//add2
+}
+function ZooKeeperSlow02 (ZooKeeper2, Fart)//add2
+{
+    ZookeeperSpeed02 = -10;
+    ZooKeeper2.setTint(0xff0000);
+    
+    timedEvent = this.time.delayedCall(2500, ZooKeeperSpeedup02, [], this);//add2
+}
+
+function ZooKeeperSlow03 (ZooKeeper3, Fart)//add2
+{
+    ZookeeperSpeed03 = -10;
+    ZooKeeper3.setTint(0xff0000);
+    
+    timedEvent = this.time.delayedCall(2500, ZooKeeperSpeedup03, [], this);//add2
+}
+
+function ZooKeeperSpeedup()//add2
+{
+    ZookeeperSpeed = -180;
+    timedEvent = this.time.delayedCall(1000, ZooKeeperNoraml, [], this);//add
+}
+
+function ZooKeeperSpeedup02()//add2
+{
+    ZookeeperSpeed02 = -180;
+    timedEvent = this.time.delayedCall(1000, ZooKeeperNoraml02, [], this);//add
+}
+
+function ZooKeeperSpeedup03()//add2
+{
+    ZookeeperSpeed03 = -180;
+    timedEvent = this.time.delayedCall(1000, ZooKeeperNoraml03, [], this);//add
+}
+
+function ZooKeeperNoraml()//add2
+{
+    ZookeeperSpeed = -160;
+    ZooKeeper.setVelocityY(ZookeeperSpeed);
+    ZooKeeper.setTint(0xffffff);
+}
+
+function ZooKeeperNoraml02()//add2
+{
+    ZookeeperSpeed02 = -160;
+    ZooKeeper2.setVelocityY(ZookeeperSpeed02);
+    ZooKeeper2.setTint(0xffffff);
+}
+
+function ZooKeeperNoraml03()//add2
+{
+    ZookeeperSpeed03 = -160;
+    ZooKeeper3.setVelocityY(ZookeeperSpeed03);
+    ZooKeeper3.setTint(0xffffff);
+}
+
+//Panda's speedup again
+function NormalSpeed ()
+{
+    PandaSpeed = -160;
+    Panda.setTint(0xffffff);
+}
+
+//When Panda farts
+function fartfunction()//add2
+{
+    
+    //fartanimation();
+    effectmusic3.play();
+    Fart.anims.play('fart', true);
+    Fart.x = Panda.x;
+    Fart.y = Panda.y + 60;
+
+    Panda.setTint(0xffffff);
+   
+    if(collectitem > 0)
+    {
+        collectitem--;
+        //ShowBambooIcon();
+    }
+
+    if(collectitem==0)
+    {
+        Panda.scaleX = 2;
+     Panda.scaleY = 2;
+    }
+
+    //add2
+    
     
 }
 
-function render() {
 
-game.debug.cameraInfo(game.camera, 32, 32);
-
+//Score
+function Scorerecord()//add2
+{
+    count++;
+    if(count%15 == 0)
+    {
+         Score++;
+         if(distance < -150)
+         {
+             distance=+30;
+         }
+    }
 }
-</script>
 
+//Camera DONT TOUVH IT EVER !!!!
+function render() 
+{
+        game.debug.cameraInfo(game.camera, 32, 32);
+}
+
+</script>
 </body>
 </html>
